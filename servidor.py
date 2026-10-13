@@ -21,6 +21,7 @@ import sys
 import threading
 
 import juego
+import tunel as mod_tunel
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 
@@ -230,6 +231,26 @@ def main():
     URLS_ALTERNAS = [f"http://{o}:{PUERTO}/jugar" for o in ips[1:]]
     url_host = f"http://127.0.0.1:{PUERTO}/host/{TOKEN_HOST}"
 
+    # Modo tunel: los celulares entran por internet en vez de por la red local.
+    # Sirve cuando los estudiantes estan con datos moviles o en otra wifi.
+    t = None
+    if "--tunel" in sys.argv:
+        print("Abriendo el túnel (puede tardar unos segundos)...")
+        t = mod_tunel.Tunel(PUERTO)
+        publica = t.abrir()
+        if publica:
+            URLS_ALTERNAS = [url_jugar] + URLS_ALTERNAS
+            url_jugar = URL_JUGAR = publica + "/jugar"
+        elif mod_tunel.buscar_ejecutable() is None:
+            print(mod_tunel.AYUDA_SIN_CLOUDFLARED)
+        else:
+            print("  No pude abrir el túnel. Sigo en modo red local.")
+            print("  Lo que dijo cloudflared:")
+            for linea in t.diagnostico().splitlines():
+                print("     ", linea)
+            t.cerrar()
+            t = None
+
     print("=" * 66)
     print("  GEOGUESSR SANTANDER - COMPETENCIA")
     print("=" * 66)
@@ -239,13 +260,18 @@ def main():
     print()
     print("  JUGADORES (el QR del tablero lleva aca):")
     print(f"    {url_jugar}")
-    if len(ips) > 1:
-        print("    otras direcciones de esta maquina, por si esa no sirve:")
-        for otra in ips[1:]:
-            print(f"      http://{otra}:{PUERTO}/jugar")
+    if URLS_ALTERNAS:
+        print("    otras direcciones, por si esa no sirve:")
+        for otra in URLS_ALTERNAS:
+            print(f"      {otra}")
     print()
-    print("  Los celulares tienen que estar en el MISMO WIFI que este portatil.")
-    print("  No hace falta internet.")
+    if t:
+        print("  Modo TUNEL: los celulares entran por internet, con datos")
+        print("  moviles o con cualquier wifi. Este portatil si necesita internet.")
+    else:
+        print("  Modo RED LOCAL: los celulares tienen que estar en el MISMO WIFI")
+        print("  que este portatil. No hace falta internet.")
+        print("  Si van a estar con datos moviles, usa:  python servidor.py --tunel")
     print()
     print("  >> NO CIERRES ESTA VENTANA mientras dure la competencia <<")
     print("=" * 66)
@@ -256,6 +282,9 @@ def main():
             httpd.serve_forever()
         except KeyboardInterrupt:
             print("\nListo, hasta luego.")
+        finally:
+            if t:
+                t.cerrar()      # si queda vivo, el tunel sigue publicando el servidor
 
 
 if __name__ == "__main__":

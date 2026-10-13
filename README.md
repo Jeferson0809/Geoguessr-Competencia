@@ -4,8 +4,19 @@ Versión **multijugador** del GeoGuessr aéreo de Bucaramanga, al estilo Kahoot:
 el profesor proyecta un tablero, los estudiantes escanean un QR y compiten desde
 el celular. Rondas con tiempo, puntaje por cercanía y rapidez, y podio al final.
 
-**Funciona sin internet.** El portátil del profesor es el servidor y los celulares
-se conectan por el wifi del salón. Los mapas viajan dentro del programa.
+El portátil del profesor es el servidor y los mapas viajan dentro del programa.
+Hay **dos formas** de que entren los celulares, según lo que haya ese día:
+
+| | Red local | Túnel |
+|---|---|---|
+| Comando | `python servidor.py` | `python servidor.py --tunel` |
+| Los celulares entran por | el wifi del salón | internet (datos móviles o cualquier wifi) |
+| Necesita internet | **No** | Sí, pero solo en el portátil |
+| Cuándo usarlo | hay una wifi y todos caben en ella | a ti te dan la wifi de admin y los chicos andan con datos |
+
+En los colegios suele pasar lo segundo: al profesor le dan la red de administración
+y los estudiantes quedan con datos móviles. Ahí la red local **no sirve**: un celular
+con datos no puede alcanzar la IP privada del portátil. Para eso está el túnel.
 
 > La versión de un jugador vive en otro repo:
 > [Geoguessr-Santander](https://github.com/Jeferson0809/Geoguessr-Santander).
@@ -56,15 +67,36 @@ Los tres números se ajustan arriba de [`juego.py`](juego.py):
 ## Para correrlo
 
 ```bash
-python servidor.py
+python servidor.py           # red local
+python servidor.py --tunel   # con URL pública, para datos móviles
 ```
 
 Imprime dos direcciones: la del **tablero** (se abre sola en el navegador) y la
 de los **jugadores**, que es a la que apunta el QR.
 
 El tablero vive en una URL con un código secreto (`/host/xxxxxxx`) que cambia en
-cada arranque. Así un estudiante que escriba la IP a mano cae en la pantalla de
-jugador y no puede saltarse rondas.
+cada arranque. Así un estudiante que escriba la dirección a mano cae en la pantalla
+de jugador y no puede saltarse rondas. Esto importa más todavía con el túnel, donde
+la dirección es pública.
+
+### El túnel
+
+`--tunel` usa [cloudflared](https://github.com/cloudflare/cloudflared) para darle al
+servidor local una URL pública temporal. No pide cuenta ni tarjeta, no abre puertos
+en el router, y la URL muere al cerrar el programa (es distinta cada vez, así que el
+QR hay que proyectarlo en el momento).
+
+Se consigue una sola vez:
+
+```bash
+python obtener_cloudflared.py
+```
+
+Si no está, el juego avisa y sigue funcionando en modo red local.
+
+**Cuánto gastan de datos los estudiantes:** poco. El celular solo descarga el mapa
+de calles, que son vectores — las fotos satelitales, que es lo pesado, se quedan en
+el proyector. Un par de MB por teléfono.
 
 ### Empaquetado para llevar al colegio
 
@@ -121,6 +153,8 @@ de árboles y como pista aérea son injugables aunque todo el mundo los conozca.
 | [`juego.py`](juego.py) | Las reglas: jugadores, rondas, puntajes. No sabe nada de HTTP. |
 | [`servidor.py`](servidor.py) | HTTP + API + sirve los mapas desde `tiles.db`. Librería estándar, sin dependencias. |
 | [`pruebas.py`](pruebas.py) | Pruebas de las reglas. `python pruebas.py`, no necesita servidor ni navegador. |
+| [`tunel.py`](tunel.py) · [`obtener_cloudflared.py`](obtener_cloudflared.py) | La URL pública para cuando los chicos están con datos. |
+| [`pruebas_tunel.py`](pruebas_tunel.py) | Prueba el túnel con un cloudflared de mentira, sin descargar ni publicar nada. |
 | [`web/host.html`](web/host.html) · `host.js` | El tablero del proyector. |
 | [`web/jugador.html`](web/jugador.html) · `jugador.js` | La pantalla del celular. |
 | [`descargar_mapas.py`](descargar_mapas.py) | Baja los mapas a `tiles.db`. |
