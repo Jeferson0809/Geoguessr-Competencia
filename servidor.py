@@ -19,6 +19,7 @@ import socketserver
 import sqlite3
 import sys
 import threading
+import webbrowser
 
 import juego
 import tunel as mod_tunel
@@ -314,7 +315,9 @@ def main():
     print("=" * 66)
 
     with Servidor(("0.0.0.0", PUERTO), Handler) as httpd:
-        threading.Timer(0.8, lambda: __import__("webbrowser").open(url_host)).start()
+        # Importado arriba a proposito: con __import__ dentro del lambda,
+        # PyInstaller no lo detecta y el .exe se queda sin abrir el navegador.
+        threading.Timer(0.8, lambda: webbrowser.open(url_host)).start()
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:

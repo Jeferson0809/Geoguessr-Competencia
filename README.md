@@ -27,6 +27,65 @@ local automáticamente, avisando en la consola.
 
 ---
 
+## Para el que va a dirigir la competencia
+
+**No hace falta clonar el repo ni saber de programación.** Hay dos caminos:
+
+### Camino corto: descargar y abrir
+
+1. Descarga **`GeoGuessr-Competencia.zip`** de la
+   [página de descargas](https://github.com/Jeferson0809/Geoguessr-Competencia/releases/latest) (~73 MB).
+2. Descomprímelo y copia la carpeta **completa** donde quieras (sirve un USB).
+3. Doble clic en **`GeoGuessr-Competencia.exe`**.
+
+Eso es todo. No necesita Python, ni git, ni instalar nada. Los mapas y el programa
+que abre la dirección pública ya vienen adentro.
+
+> El `.exe` solo no funciona: al lado van los mapas y las librerías, en `_internal/`.
+> Si Windows muestra "aplicación desconocida" es porque el programa no está firmado:
+> *Más información → Ejecutar de todas formas*.
+
+### Camino largo: clonar el repo
+
+Solo si vas a **cambiar** algo (ubicaciones, puntaje, tiempos):
+
+```bash
+git clone https://github.com/Jeferson0809/Geoguessr-Competencia.git
+cd Geoguessr-Competencia
+pip install pmtiles          # solo para bajar los mapas
+python descargar_mapas.py    # ~10 min, una sola vez
+python servidor.py
+```
+
+---
+
+## El día de la competencia
+
+1. **Conecta el portátil a internet.** La wifi del colegio o tus datos, da igual.
+   Los estudiantes **no** tienen que estar en esa red.
+2. Abre el programa y espera unos 10 segundos. Se abre solo el **tablero** en el
+   navegador, con un QR.
+3. **Proyecta el tablero** y ponlo en pantalla completa con `F11`.
+4. En el menú elige **cuántas rondas** y **cuántos segundos**. Para un grupo nuevo:
+   5 rondas de 60 segundos, unos 7 minutos.
+5. Los estudiantes **escanean el QR** con la cámara, escriben su nombre y aparecen
+   en la pantalla. Entran con datos móviles o con cualquier wifi.
+6. Cuando estén todos, **"Empezar competencia"**.
+
+**Durante la partida tienes dos controles**: la **✕** al lado de cada nombre para
+sacar a alguien, y **"Cerrar ronda ya"** para no esperar el reloj si ya respondieron
+todos.
+
+**Tres cosas que conviene saber:**
+
+- **No cierres la ventana negra.** Ahí vive el servidor.
+- **La dirección del QR cambia cada vez** que abres el programa. Proyéctalo en el
+  momento; no sirve mandarlo antes por WhatsApp.
+- **Si el portátil se queda sin internet**, el programa avisa y sigue funcionando,
+  pero ahí los celulares sí tendrían que estar en tu misma wifi.
+
+---
+
 ## Cómo se juega
 
 **El profesor** abre el programa y proyecta el **tablero**. Ahí sale un QR.
