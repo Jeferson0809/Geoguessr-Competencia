@@ -45,6 +45,15 @@ que abre la dirección pública ya vienen adentro.
 > Si Windows muestra "aplicación desconocida" es porque el programa no está firmado:
 > *Más información → Ejecutar de todas formas*.
 
+> **El juego no vive en internet.** Existe mientras el programa está abierto en el
+> portátil, y la dirección del QR es distinta cada vez que se arranca. No sirve
+> mandar el link por anticipado: se proyecta el QR en el momento.
+
+### En el computador donde está el repo
+
+Si es tu propio portátil, no necesitas el `.exe`: doble clic en **`ARRANCAR.bat`**
+y listo. Al no haber ejecutable empaquetado, ningún antivirus se mete.
+
 ### Camino largo: clonar el repo
 
 Solo si vas a **cambiar** algo (ubicaciones, puntaje, tiempos):
