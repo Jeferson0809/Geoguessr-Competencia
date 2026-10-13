@@ -217,12 +217,35 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 class Servidor(socketserver.ThreadingTCPServer):
     daemon_threads = True
-    allow_reuse_address = True
+    # OJO: en Windows, allow_reuse_address deja que DOS procesos se peguen al
+    # mismo puerto, y las conexiones caen en cualquiera de los dos. Si alguien
+    # abre el programa dos veces, la mitad de los celulares termina hablando
+    # con una partida y la otra mitad con otra. Mejor fallar de entrada.
+    allow_reuse_address = False
+
+
+def puerto_ocupado(puerto):
+    with socket.socket() as s:
+        s.settimeout(0.5)
+        return s.connect_ex(("127.0.0.1", puerto)) == 0
 
 
 def main():
     if not os.path.exists(DB):
         sys.exit("Falta tiles.db (los mapas). Ver el README.")
+
+    if puerto_ocupado(PUERTO):
+        sys.exit(
+            "\n".join([
+                "",
+                f"  El puerto {PUERTO} ya esta ocupado.",
+                "",
+                "  Seguro dejaste otra ventana de este programa abierta. Cerrala y",
+                "  vuelve a intentar: si quedan dos, los celulares se reparten",
+                "  entre las dos partidas y el puntaje queda partido a la mitad.",
+                "",
+            ])
+        )
 
     global URL_JUGAR, URLS_ALTERNAS
     ips = ips_locales()
