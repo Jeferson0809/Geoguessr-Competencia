@@ -1,0 +1,3 @@
+# Solo para descargar los mapas (descargar_mapas.py).
+# El servidor no necesita nada: usa la libreria estandar.
+pmtiles

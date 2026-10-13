@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#05070C" />
+<title>GeoGuessr Competencia</title>
+<link rel="stylesheet" href="/vendor/maplibre-gl.css" />
+<link rel="stylesheet" href="/estilo.css" />
+<style>
+  body { height: 100dvh; overflow: hidden; }
+  .app { height: 100dvh; display: flex; flex-direction: column; }
+
+  .cabecera {
+    padding: 10px 14px calc(10px + env(safe-area-inset-top)) 14px;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .cabecera .izq { font-size: 14px; color: var(--texto2); }
+  .cabecera .der { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .cabecera .der.poco { color: #FF7043; }
+
+  .centro { flex: 1; display: flex; flex-direction: column; justify-content: center;
+            padding: 20px; gap: 16px; text-align: center; overflow-y: auto; }
+  .grande { font-size: 26px; font-weight: 800; line-height: 1.25; }
+  .chico { font-size: 16px; color: var(--texto2); }
+
+  #mapa { flex: 1; min-height: 0; }
+  .pie { padding: 12px 14px calc(12px + env(safe-area-inset-bottom)) 14px; }
+  .pie button { width: 100%; font-size: 19px; font-weight: 700; padding: 18px; }
+
+  .aviso {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    bottom: 92px; z-index: 6;
+    background: rgba(8,12,18,.92); border: 1px solid var(--borde);
+    border-radius: 999px; padding: 10px 18px; font-size: 14px; white-space: nowrap;
+  }
+  .mapwrap { flex: 1; position: relative; min-height: 0; display: flex; }
+  .resu { font-size: 15px; }
+  .resu b { font-size: 30px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="cabecera">
+    <div class="izq" id="izq"></div>
+    <div class="der" id="reloj"></div>
+  </div>
+  <div class="barra" id="barra" style="margin:0 14px; display:none"><i></i></div>
+
+  <!-- ENTRAR -->
+  <div class="centro" id="vEntrar">
+    <div class="grande">GeoGuessr Santander</div>
+    <div class="chico">Escribe tu nombre para entrar a la competencia</div>
+    <input type="text" id="nombre" placeholder="Tu nombre" maxlength="20"
+           autocomplete="off" autocapitalize="words" />
+    <button class="primario" id="btnEntrar" style="font-size:19px;padding:16px">Entrar</button>
+    <div class="chico" id="errorEntrar" style="color:#FF7043"></div>
+  </div>
+
+  <!-- ESPERANDO -->
+  <div class="centro" id="vEspera" style="display:none">
+    <div style="font-size:48px">⏳</div>
+    <div class="grande" id="esperaTitulo">Listo, <span id="miNombre"></span></div>
+    <div class="chico" id="esperaTexto">Espera a que el profe empiece la competencia.</div>
+  </div>
+
+  <!-- JUGANDO -->
+  <div class="mapwrap" id="vJuego" style="display:none">
+    <div id="mapa" style="width:100%"></div>
+    <div class="aviso" id="aviso">Toca el mapa donde crees que es</div>
+  </div>
+  <div class="pie" id="pieJuego" style="display:none">
+    <button class="primario" id="btnConfirmar" disabled>Confirmar</button>
+  </div>
+
+  <!-- RESULTADO DE LA RONDA -->
+  <div class="centro" id="vResultado" style="display:none">
+    <div id="resuCaja" class="resu"></div>
+    <table class="tabla" id="tablaMini" style="margin-top:8px"></table>
+  </div>
+
+  <!-- FINAL -->
+  <div class="centro" id="vFinal" style="display:none">
+    <div style="font-size:54px" id="finMedalla">🏁</div>
+    <div class="grande" id="finTexto"></div>
+    <table class="tabla" id="tablaFinal"></table>
+  </div>
+
+</div>
+
+<script src="/vendor/maplibre-gl.js"></script>
+<script src="/vendor/protomaps-themes-base.js"></script>
+<script src="/comun.js"></script>
+<script src="/jugador.js"></script>
+</body>
+</html>
