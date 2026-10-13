@@ -138,6 +138,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             # IP de esta maquina en el wifi: es la unica que ven los celulares.
             estado["url_jugar"] = URL_JUGAR
             estado["urls_alternas"] = URLS_ALTERNAS
+            # El tablero cambia las instrucciones segun el modo: con tunel no
+            # hay que pedirles que se conecten a ninguna wifi.
+            estado["modo"] = "tunel" if URL_JUGAR.startswith("https://") else "local"
+            estado["max_jugadores"] = juego.MAX_JUGADORES
             return self.responder_json(estado)
 
         if ruta == "/api/jugador":
@@ -154,7 +158,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             if partida.fase != "lobby":
                 return self.responder_json({"error": "la partida ya empezó"}, 409)
             jid = datos.get("id") or secrets.token_urlsafe(8)
-            nombre = partida.unirse(jid, datos.get("nombre", ""))
+            if partida.esta_expulsado(jid):
+                return self.responder_json(
+                    {"error": "El profesor te sacó de la partida."}, 403)
+            motivo, nombre = partida.unirse(jid, datos.get("nombre", ""))
+            if motivo:
+                return self.responder_json({"error": motivo}, 400)
             return self.responder_json({"id": jid, "nombre": nombre})
 
         if ruta == "/api/responder":
@@ -164,6 +173,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         # De aca para abajo, solo el que tiene el token (el profesor)
         if not self.es_host():
             return self.responder_json({"error": "token"}, 403)
+        if ruta == "/api/expulsar":
+            return self.responder_json({"nombre": partida.expulsar(datos.get("id", ""))})
+        if ruta == "/api/config":
+            ok = partida.configurar(datos.get("rondas"), datos.get("segundos"))
+            return self.responder_json({"ok": ok})
         if ruta == "/api/empezar":
             return self.responder_json({"ok": partida.empezar()})
         if ruta == "/api/siguiente":
@@ -254,11 +268,12 @@ def main():
     URLS_ALTERNAS = [f"http://{o}:{PUERTO}/jugar" for o in ips[1:]]
     url_host = f"http://127.0.0.1:{PUERTO}/host/{TOKEN_HOST}"
 
-    # Modo tunel: los celulares entran por internet en vez de por la red local.
-    # Sirve cuando los estudiantes estan con datos moviles o en otra wifi.
+    # El tunel es lo normal: los estudiantes entran por internet, con datos o
+    # con la wifi que sea. Solo hace falta que ESTE portatil tenga internet.
+    # Con --local se fuerza el modo red local (todos en la misma wifi).
     t = None
-    if "--tunel" in sys.argv:
-        print("Abriendo el túnel (puede tardar unos segundos)...")
+    if "--local" not in sys.argv:
+        print("Abriendo la dirección pública (unos segundos)...")
         t = mod_tunel.Tunel(PUERTO)
         publica = t.abrir()
         if publica:
@@ -294,7 +309,6 @@ def main():
     else:
         print("  Modo RED LOCAL: los celulares tienen que estar en el MISMO WIFI")
         print("  que este portatil. No hace falta internet.")
-        print("  Si van a estar con datos moviles, usa:  python servidor.py --tunel")
     print()
     print("  >> NO CIERRES ESTA VENTANA mientras dure la competencia <<")
     print("=" * 66)

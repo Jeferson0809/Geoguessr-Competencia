@@ -21,22 +21,57 @@
   .lateral { width: 370px; display: flex; flex-direction: column; gap: 14px; min-height: 0; }
   .lista { overflow-y: auto; flex: 1; }
 
-  .lobby { flex: 1; display: flex; align-items: center; justify-content: center; gap: 60px; }
-  .qrcaja { background: #fff; padding: 20px; border-radius: 22px; }
-  .qrcaja img, .qrcaja canvas { display: block; width: 360px; height: 360px; image-rendering: pixelated; }
-  .url { font-size: 30px; font-weight: 800; margin-top: 18px; text-align: center; letter-spacing: 0.5px; }
-  .pasos { font-size: 22px; line-height: 1.9; }
+  .lobby { flex: 1; display: flex; align-items: center; justify-content: center; gap: 56px; }
+  /* El QR va oscuro sobre claro porque asi lo leen todas las camaras, pero
+     metido en una tarjeta redondeada con borde verde para que no sea un
+     ladrillo blanco en medio de la pantalla. */
+  .qrtarjeta {
+    background: var(--panel);
+    border: 1px solid rgba(50, 205, 50, 0.25);
+    border-radius: 24px;
+    padding: 18px;
+    text-align: center;
+    box-shadow: 0 0 60px rgba(50, 205, 50, 0.08);
+  }
+  .qrcaja {
+    background: #fff; padding: 14px; border-radius: 16px; display: inline-block;
+  }
+  .qrcaja img { display: block; width: 280px; height: 280px; image-rendering: pixelated; }
+  .url {
+    font-size: 15px; margin-top: 14px; color: var(--texto2);
+    opacity: 0.75; word-break: break-all; max-width: 300px;
+  }
+  .pasos { font-size: 23px; line-height: 2; }
   .pasos b { color: var(--verde); }
 
   .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; max-height: 240px; overflow-y: auto; }
   .chip {
     background: rgba(50,205,50,.12); border: 1px solid var(--borde);
-    border-radius: 999px; padding: 8px 16px; font-size: 18px;
-    animation: entra .35s ease;
+    border-radius: 999px; padding: 8px 10px 8px 16px; font-size: 18px;
+    animation: entra .35s ease; display: flex; align-items: center; gap: 8px;
   }
+  /* La X para sacar a alguien: discreta hasta que se la busca */
+  .equis {
+    background: none; border: 0; padding: 0 6px; cursor: pointer;
+    color: var(--texto2); opacity: 0.35; font-size: 16px; line-height: 1;
+    border-radius: 999px;
+  }
+  .equis:hover { opacity: 1; color: #FF7043; background: rgba(255,112,67,.15); }
+  .tabla td.quitar { width: 34px; text-align: right; padding-left: 0; }
   @keyframes entra { from { opacity: 0; transform: scale(.8); } to { opacity: 1; transform: scale(1); } }
 
-  .podio { display: flex; gap: 20px; align-items: flex-end; justify-content: center; flex: 1; }
+  .ajustes { margin-top: 22px; display: flex; gap: 26px; flex-wrap: wrap; align-items: flex-end; }
+  .ajuste { display: flex; flex-direction: column; gap: 6px; }
+  .ajuste label { font-size: 14px; color: var(--texto2); opacity: 0.8; }
+  .ajuste select {
+    font: inherit; font-size: 19px; color: var(--texto);
+    background: rgba(5, 8, 13, 0.9); border: 1px solid var(--borde);
+    border-radius: 12px; padding: 10px 14px;
+  }
+  .nota { flex-basis: 100%; font-size: 13px; color: var(--texto2); opacity: 0.65; }
+
+  .finalcentro { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .podio { display: flex; gap: 20px; align-items: flex-end; justify-content: center; }
   .puesto { text-align: center; }
   .puesto .caja {
     background: var(--panel); border: 2px solid var(--borde); border-radius: 18px;
@@ -66,21 +101,36 @@
 
   <!-- LOBBY -->
   <div class="lobby" id="vLobby">
-    <div>
+    <div class="qrtarjeta">
       <div class="qrcaja"><div id="qr"></div></div>
       <div class="url" id="url"></div>
     </div>
     <div>
-      <div class="pasos">
-        1. Conéctate al <b>mismo wifi</b> del salón<br />
-        2. Escanea el QR con la cámara<br />
-        3. Escribe tu nombre y espera
+      <div class="pasos" id="pasos"></div>
+      <!-- Esto solo lo ve el profesor: el tablero vive en una URL con codigo -->
+      <div class="panel ajustes">
+        <div class="ajuste">
+          <label for="selRondas">Rondas</label>
+          <select id="selRondas"></select>
+        </div>
+        <div class="ajuste">
+          <label for="selSegundos">Segundos por ronda</label>
+          <select id="selSegundos">
+            <option value="30">30 — rapidito</option>
+            <option value="45">45</option>
+            <option value="60" selected>60 — normal</option>
+            <option value="90">90</option>
+            <option value="120">120 — con calma</option>
+          </select>
+        </div>
+        <div class="nota" id="notaRondas"></div>
       </div>
-      <div style="font-size:22px;margin-top:26px">
+
+      <div style="font-size:22px;margin-top:22px">
         <b id="nJug">0</b> jugadores conectados
       </div>
       <div class="chips" id="chips"></div>
-      <div style="margin-top:26px">
+      <div style="margin-top:22px">
         <button class="primario" id="btnEmpezar" style="font-size:22px;padding:18px 40px" disabled>
           Empezar competencia
         </button>
@@ -101,11 +151,17 @@
     </div>
   </div>
 
-  <!-- FINAL -->
-  <div id="vFinal" style="display:none; flex:1; flex-direction:column">
-    <div class="podio" id="podio"></div>
-    <div class="acciones">
-      <button id="btnOtra" class="primario" style="font-size:20px">Jugar otra vez</button>
+  <!-- FINAL: podio al centro, tabla completa a la derecha -->
+  <div class="cuerpo" id="vFinal" style="display:none">
+    <div class="finalcentro">
+      <div class="podio" id="podio"></div>
+      <div class="acciones">
+        <button id="btnOtra" class="primario" style="font-size:20px">Jugar otra vez</button>
+      </div>
+    </div>
+    <div class="lateral">
+      <div class="panel" style="font-size:19px;font-weight:700">Todos los participantes</div>
+      <div class="panel lista"><table class="tabla" id="tablaFinal"></table></div>
     </div>
   </div>
 

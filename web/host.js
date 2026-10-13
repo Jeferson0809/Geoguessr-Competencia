@@ -34,15 +34,45 @@ function pintarQR(url) {
   const q = qrcode(0, "M");
   q.addData(url);
   q.make();
-  $("qr").innerHTML = q.createImgTag(9, 0);
+  $("qr").innerHTML = q.createImgTag(8, 0);
   $("url").textContent = url.replace(/^https?:\/\//, "");
 }
 
-function pintarTabla(tabla) {
-  $("tabla").innerHTML = tabla.map((f) =>
+/* Con tunel entran por internet desde donde sea, asi que pedirles que se
+   conecten a una wifi sobra y encima confunde. */
+function pintarPasos(modo) {
+  const pasos = modo === "tunel"
+    ? ["Abre la cámara del celular",
+       "Apunta al <b>código QR</b>",
+       "Escribe tu nombre y espera"]
+    : ["Conéctate al <b>wifi del salón</b>",
+       "Apunta la cámara al <b>código QR</b>",
+       "Escribe tu nombre y espera"];
+  $("pasos").innerHTML = pasos.map((t, i) => `${i + 1}. ${t}`).join("<br />");
+}
+
+/* Durante la ronda no se muestran puntos: solo quien ya respondio. Si fueran
+   apareciendo, el que todavia no responde ve quien acerto. */
+function pintarTabla(destino, tabla, ocultarPuntos, conExpulsar) {
+  $(destino).innerHTML = tabla.map((f) =>
     `<tr><td class="pos">${f.puesto}</td><td>${escapar(f.nombre)}</td>` +
-    `<td class="pts">${f.puntaje}</td></tr>`
+    `<td class="pts">${ocultarPuntos
+        ? (f.respondio ? '<span style="color:var(--verde)">✓</span>'
+                       : '<span style="opacity:.35">…</span>')
+        : f.puntaje}</td>` +
+    (conExpulsar ? `<td class="quitar"><button class="equis" data-id="${f.id}"
+         title="Sacar a ${escapar(f.nombre)}">✕</button></td>` : "") +
+    `</tr>`
   ).join("") || '<tr><td style="opacity:.5">Sin jugadores</td></tr>';
+  if (conExpulsar) cablearExpulsar($(destino));
+}
+
+/* Ningun filtro de nombres atrapa todo, asi que el profesor tiene que poder
+   sacar a alguien en el momento. */
+function cablearExpulsar(raiz) {
+  raiz.querySelectorAll("button.equis").forEach((b) => {
+    b.onclick = () => enviar(api("/api/expulsar"), { id: b.dataset.id });
+  });
 }
 
 function pintarPodio(tabla) {
@@ -148,8 +178,13 @@ function render(e, cambio) {
     if (modoMapa) destruirMapa();
     $("nJug").textContent = e.jugadores;
     $("btnEmpezar").disabled = e.jugadores === 0;
+    prepararAjustes(e);
     if (cambio) {
-      $("chips").innerHTML = e.tabla.map((f) => `<div class="chip">${escapar(f.nombre)}</div>`).join("");
+      $("chips").innerHTML = e.tabla.map((f) =>
+        `<div class="chip">${escapar(f.nombre)}` +
+        `<button class="equis" data-id="${f.id}" title="Sacar a ${escapar(f.nombre)}">✕</button>` +
+        `</div>`).join("");
+      cablearExpulsar($("chips"));
     }
   }
 
@@ -184,11 +219,40 @@ function render(e, cambio) {
   if (e.fase === "final" && cambio) {
     destruirMapa();
     pintarPodio(e.tabla);
+    pintarTabla("tablaFinal", e.tabla, false);
   }
 
-  if (e.fase !== "lobby") pintarTabla(e.tabla);
+  if (e.fase === "ronda" || e.fase === "resultados") {
+    pintarTabla("tabla", e.tabla, !!e.ocultar_puntos, true);
+  }
   ronda = e.ronda;
   fase = e.fase;
+}
+
+/* Ajustes de la partida. Van en el tablero y no en el celular a proposito:
+   esta pantalla vive en una URL con codigo, asi que solo la ve el profesor. */
+let ajustesListos = false;
+
+function prepararAjustes(e) {
+  const sr = $("selRondas"), ss = $("selSegundos");
+  if (!ajustesListos && e.max_rondas) {
+    const opciones = [3, 5, 8, 10, 12, 15, 20, e.max_rondas]
+      .filter((n, i, a) => n <= e.max_rondas && a.indexOf(n) === i)
+      .sort((a, b) => a - b);
+    sr.innerHTML = opciones.map((n) =>
+      `<option value="${n}">${n} rondas${n === e.max_rondas ? " (todas)" : ""}</option>`).join("");
+    sr.value = String(e.rondas_totales);
+    ss.value = String(e.segundos_ronda);
+    const guardar = () => enviar(api("/api/config"),
+      { rondas: +sr.value, segundos: +ss.value });
+    sr.onchange = guardar;
+    ss.onchange = guardar;
+    ajustesListos = true;
+  }
+  const mins = Math.round((+$("selRondas").value * (+$("selSegundos").value + 20)) / 60);
+  $("notaRondas").textContent =
+    `Máximo ${e.max_rondas} rondas: no se repite lugar. ` +
+    `Esta partida dura unos ${mins} minutos contando los resultados.`;
 }
 
 $("btnEmpezar").onclick = () => enviar(api("/api/empezar"));
@@ -196,5 +260,6 @@ $("btnOtra").onclick = () => enviar(api("/api/reiniciar"));
 
 pedir(api("/api/host")).then((e) => {
   if (e.url_jugar) pintarQR(e.url_jugar);
+  pintarPasos(e.modo);
   sondear(() => api("/api/host"), render);
 });
