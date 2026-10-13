@@ -79,11 +79,6 @@ python servidor.py
    5 rondas de 60 segundos, unos 7 minutos.
 5. Los estudiantes **escanean el QR** con la cámara, escriben su nombre y aparecen
    en la pantalla. Entran con datos móviles o con cualquier wifi.
-
-   El tablero muestra **dos direcciones a la vez**: el QR sale por internet, y
-   debajo aparece una dirección local para quien esté conectado a la misma wifi
-   que tu portátil. Esa segunda **no gasta datos**. Las dos funcionan al tiempo,
-   así que cada quien entra por donde pueda.
 6. Cuando estén todos, **"Empezar competencia"**.
 
 **Durante la partida tienes dos controles**: la **✕** al lado de cada nombre para
@@ -98,15 +93,13 @@ todos.
 - **Si el portátil se queda sin internet**, el programa avisa y sigue funcionando,
   pero ahí los celulares sí tendrían que estar en tu misma wifi.
 
-### Si quieres que los estudiantes no gasten datos
+### El modo sin internet
 
-La red que compartan **no necesita tener internet**: solo tiene que existir y que
-todos estén en ella. Alcanza con que el colegio los deje entrar a cualquier wifi,
-aunque esté caída. Ahí usan la dirección local del tablero y no consumen nada.
-
-Si no hay ninguna red común, se puede armar una: el portátil o un celular creando
-un punto de acceso. El límite ahí es el número de dispositivos que aguanta el
-hotspot (suelen ser 8 o 10), así que para un salón entero no alcanza.
+`python servidor.py --local` sirve cuando no hay internet en ningún lado. Ahí el QR
+apunta a la dirección del portátil en la red local, y **todos los celulares tienen
+que estar en esa misma wifi** — lo que en la práctica significa repartir la clave de
+la red del colegio, que normalmente no se puede. Por eso el modo normal es el de la
+dirección pública.
 
 ---
 
