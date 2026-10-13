@@ -43,6 +43,14 @@
   }
   .pasos { font-size: 23px; line-height: 2; }
   .pasos b { color: var(--verde); }
+  /* Las dos puertas funcionan a la vez: el QR sale a internet y esta linea
+     es para quien este en la misma wifi del portatil, que asi no gasta datos. */
+  .alterna {
+    margin-top: 14px; font-size: 16px; color: var(--texto2);
+    background: rgba(13, 21, 32, 0.6); border: 1px solid rgba(50, 205, 50, 0.18);
+    border-radius: 14px; padding: 12px 16px; display: none;
+  }
+  .alterna b { color: var(--verde); font-size: 19px; }
 
   .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; max-height: 240px; overflow-y: auto; }
   .chip {
@@ -107,6 +115,7 @@
     </div>
     <div>
       <div class="pasos" id="pasos"></div>
+      <div class="alterna" id="alterna"></div>
       <!-- Esto solo lo ve el profesor: el tablero vive en una URL con codigo -->
       <div class="panel ajustes">
         <div class="ajuste">

@@ -38,6 +38,19 @@ function pintarQR(url) {
   $("url").textContent = url.replace(/^https?:\/\//, "");
 }
 
+/* Las dos puertas quedan abiertas al mismo tiempo. El que esta en la wifi del
+   salon entra por la direccion local y no gasta ni un dato; el que anda con
+   datos moviles entra por el QR. */
+function pintarAlterna(e) {
+  const locales = (e.urls_alternas || []).filter((u) => u.startsWith("http://"));
+  if (e.modo !== "tunel" || !locales.length) return;
+  const caja = document.getElementById("alterna");
+  caja.style.display = "block";
+  caja.innerHTML =
+    "¿Estás en el wifi de este computador? Entra sin gastar datos:<br>" +
+    locales.map((u) => `<b>${escapar(u.replace(/^https?:\/\//, ""))}</b>`).join("<br>");
+}
+
 /* Con tunel entran por internet desde donde sea, asi que pedirles que se
    conecten a una wifi sobra y encima confunde. */
 function pintarPasos(modo) {
@@ -261,5 +274,6 @@ $("btnOtra").onclick = () => enviar(api("/api/reiniciar"));
 pedir(api("/api/host")).then((e) => {
   if (e.url_jugar) pintarQR(e.url_jugar);
   pintarPasos(e.modo);
+  pintarAlterna(e);
   sondear(() => api("/api/host"), render);
 });
