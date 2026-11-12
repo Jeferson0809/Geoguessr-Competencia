@@ -21,13 +21,24 @@ function mmss(s) {
 }
 
 // --------------------------------------------------------------------------
-function prepararMapa() {
+let ciudadMapa = null;
+
+function prepararMapa(ciudad) {
+  // Si el profesor cambio de ciudad, el mapa viejo apunta a otro lado y sus
+  // limites dejarian al estudiante encerrado lejos de donde hay que marcar.
+  if (mapa && ciudadMapa !== ciudad) {
+    mapa.remove();
+    mapa = null;
+    marca = null;
+  }
   if (mapa) return;
+  ciudadMapa = ciudad;
+  const v = vistaDe(ciudad);
   mapa = crearMapa("mapa", {
     style: estiloCalles(),
-    center: [-73.123, 7.119], zoom: 12,
-    minZoom: CALLES_MIN, maxZoom: CALLES_MAX,
-    maxBounds: METRO,
+    center: v.centro, zoom: v.zoom,
+    minZoom: v.minZoom, maxZoom: CALLES_MAX,
+    maxBounds: v.limites,
     attributionControl: false,
   });
   mapa.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
@@ -55,7 +66,10 @@ function nuevaRonda() {
   b.textContent = "Confirmar";
   $("aviso").style.display = "block";
   $("aviso").textContent = "Toca el mapa donde crees que es";
-  if (mapa) mapa.easeTo({ center: [-73.123, 7.119], zoom: 12, duration: 400 });
+  if (mapa) {
+    const v = vistaDe(ciudadMapa);
+    mapa.easeTo({ center: v.centro, zoom: v.zoom, duration: 400 });
+  }
 }
 
 async function confirmar() {
@@ -105,7 +119,7 @@ function render(e, cambio) {
   ver("vFinal", e.fase === "final");
 
   if (jugando) {
-    prepararMapa();
+    prepararMapa(e.ciudad);
     if (rondaActual !== e.ronda) {
       rondaActual = e.ronda;
       nuevaRonda();
@@ -125,7 +139,9 @@ function render(e, cambio) {
          <div class="grande" style="color:${r.color}">${escapar(r.frase)}</div>
          <div style="margin-top:10px"><b>${r.puntos}</b> puntos</div>
          <div class="chico">Te faltaron ${textoDistancia(r.km)} · respondiste en ${r.segundos}s</div>
-         <div class="chico" style="margin-top:10px">Era: <b>${escapar(e.solucion.nombre)}</b></div>
+         <div class="chico" style="margin-top:10px">Era: <b>${escapar(e.solucion.nombre)}</b>${
+           e.ciudad === "Las dos" && e.solucion.ciudad
+             ? " · " + escapar(e.solucion.ciudad) : ""}</div>
          <div class="chico">Vas de ${e.mi_puesto}º con ${e.puntaje} puntos</div>`
       : `<div style="font-size:52px">⌛</div>
          <div class="grande">No alcanzaste a responder</div>

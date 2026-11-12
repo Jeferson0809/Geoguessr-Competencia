@@ -206,6 +206,9 @@ def nombre_ofensivo(nombre):
                for w in (_normalizar(p) for p in PALABROTAS))
 
 
+CIUDADES = ["Bucaramanga", "Barrancabermeja", "Las dos"]
+
+
 def cargar_ubicaciones():
     """locations.js es 'const LOCATIONS_DATA = {...};' -> se saca el JSON."""
     ruta = os.path.join(AQUI, "web", "locations.js")
@@ -213,6 +216,12 @@ def cargar_ubicaciones():
         crudo = fh.read()
     crudo = crudo.split("=", 1)[1].rsplit(";", 1)[0]
     return json.loads(crudo)["locations"]
+
+
+def lugares_de(ubicaciones, ciudad):
+    if ciudad == "Las dos":
+        return list(ubicaciones)
+    return [u for u in ubicaciones if u.get("ciudad") == ciudad]
 
 
 class Partida:
@@ -230,6 +239,7 @@ class Partida:
         self.segundos_por_ronda = segundos_por_ronda
         self.rondas_totales = rondas
         self.ubicaciones = cargar_ubicaciones()
+        self.ciudad = "Bucaramanga"
         self.reiniciar()
 
     # -- helpers internos (asumen lock tomado) -------------------------------
@@ -238,8 +248,12 @@ class Partida:
         self.version += 1
 
     def _orden_ubicaciones(self):
-        fijas = [u for u in self.ubicaciones if u.get("pinned")]
-        resto = [u for u in self.ubicaciones if not u.get("pinned")]
+        pool = lugares_de(self.ubicaciones, self.ciudad)
+        # El lugar fijo solo abre la partida si su ciudad esta en juego: no
+        # tiene sentido arrancar en un colegio de Bucaramanga una competencia
+        # de Barrancabermeja.
+        fijas = [u for u in pool if u.get("pinned")]
+        resto = [u for u in pool if not u.get("pinned")]
         random.shuffle(resto)
         return (fijas + resto)[: self.rondas_totales]
 
@@ -275,11 +289,16 @@ class Partida:
         with self.lock:
             return jugador_id in self.expulsados
 
-    def configurar(self, rondas=None, segundos=None):
-        """Solo desde el lobby: cambiar largo de la partida antes de empezar."""
+    def configurar(self, rondas=None, segundos=None, ciudad=None):
+        """Solo desde el lobby: ajustes de la partida antes de empezar."""
         with self.lock:
             if self.fase != "lobby":
                 return False
+            if ciudad in CIUDADES:
+                self.ciudad = ciudad
+                # Cambiar de ciudad cambia cuantos lugares hay; si habia mas
+                # rondas pedidas que lugares disponibles, se recorta.
+                self.rondas_totales = min(self.rondas_totales, self.max_rondas())
             if rondas is not None:
                 self.rondas_totales = max(1, min(int(rondas), self.max_rondas()))
             if segundos is not None:
@@ -288,8 +307,8 @@ class Partida:
             return True
 
     def max_rondas(self):
-        """No se puede repetir lugar, asi que el tope son las ubicaciones."""
-        return len(self.ubicaciones)
+        """No se puede repetir lugar, asi que el tope son las de esa ciudad."""
+        return len(lugares_de(self.ubicaciones, self.ciudad))
 
     def unirse(self, jugador_id, nombre):
         """Devuelve (motivo_del_rechazo, nombre_final). Uno de los dos es None."""
@@ -420,6 +439,8 @@ class Partida:
                 "restante": round(self.segundos_restantes(), 1),
                 "segundos_ronda": self.segundos_por_ronda,
                 "max_rondas": self.max_rondas(),
+                "ciudad": self.ciudad,
+                "ciudades": CIUDADES,
                 # Durante la ronda la tabla va congelada y sin revelar puntos.
                 "tabla": self.tabla(congelada=self.fase == "ronda"),
                 "ocultar_puntos": self.fase == "ronda",
@@ -429,6 +450,7 @@ class Partida:
             if self.fase in ("resultados", "final") and self.ubicacion:
                 d["solucion"] = {
                     "nombre": self.ubicacion["name"],
+                    "ciudad": self.ubicacion.get("ciudad", ""),
                     "lat": self.ubicacion["lat"],
                     "lon": self.ubicacion["lon"],
                 }
@@ -450,6 +472,7 @@ class Partida:
                 "restante": round(self.segundos_restantes(), 1),
                 "segundos_ronda": self.segundos_por_ronda,
                 "jugadores": len(self.jugadores),
+                "ciudad": self.ciudad,     # el celular centra el mapa con esto
                 "unido": yo is not None,
                 "nombre": yo["nombre"] if yo else None,
                 # Durante la ronda, su puntaje de antes de responder: si no,
@@ -469,7 +492,10 @@ class Partida:
                         "emoji": emoji, "frase": frase, "color": color,
                     }
                 if self.ubicacion:
-                    d["solucion"] = {"nombre": self.ubicacion["name"]}
+                    d["solucion"] = {
+                    "nombre": self.ubicacion["name"],
+                    "ciudad": self.ubicacion.get("ciudad", ""),
+                }
                 tabla = self.tabla()
                 d["tabla"] = tabla[:5]
                 d["mi_puesto"] = next((f["puesto"] for f in tabla if f["id"] == jugador_id), None)

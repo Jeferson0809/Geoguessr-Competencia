@@ -37,7 +37,12 @@ SAT_URL = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/Ma
 SAT_ZOOMS = [16, 17, 18, 19]     # Esri no tiene z20 en Bucaramanga
 SAT_RADIO_X, SAT_RADIO_Y = 3, 2
 
-BBOX = (7.020, -73.230, 7.200, -73.040)
+# Un recuadro por ciudad. El mapa donde se marca sale de aca, asi que si una
+# ciudad no esta en la lista, sus rondas quedan sobre un mapa vacio.
+BBOXES = {
+    "Bucaramanga":     (7.020, -73.230, 7.200, -73.040),
+    "Barrancabermeja": (6.990, -73.930, 7.110, -73.780),
+}
 VT_ZOOM_MAX = 15
 HILOS = 4
 
@@ -120,15 +125,15 @@ def url_planet():
 
 def bajar_vectorial(con):
     ya = {t for t in con.execute("SELECT z,x,y FROM tiles WHERE layer='vt'")}
-    lat_min, lon_min, lat_max, lon_max = BBOX
-    faltan = []
-    for z in range(0, VT_ZOOM_MAX + 1):
-        x0, y0 = deg2tile(lat_max, lon_min, z)
-        x1, y1 = deg2tile(lat_min, lon_max, z)
-        for x in range(min(x0, x1), max(x0, x1) + 1):
-            for y in range(min(y0, y1), max(y0, y1) + 1):
-                if (z, x, y) not in ya:
-                    faltan.append((z, x, y))
+    quiero = set()
+    for lat_min, lon_min, lat_max, lon_max in BBOXES.values():
+        for z in range(0, VT_ZOOM_MAX + 1):
+            x0, y0 = deg2tile(lat_max, lon_min, z)
+            x1, y1 = deg2tile(lat_min, lon_max, z)
+            for x in range(min(x0, x1), max(x0, x1) + 1):
+                for y in range(min(y0, y1), max(y0, y1) + 1):
+                    quiero.add((z, x, y))
+    faltan = sorted(quiero - ya)
     print(f"Vectorial: {len(faltan)} tiles por bajar ({len(ya)} ya estaban)")
     if not faltan:
         return

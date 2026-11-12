@@ -182,4 +182,45 @@ p4.empezar()
 assert p4.expulsar("n") is not None, "tambien se puede sacar en plena ronda"
 igual(len(p4.jugadores), 0, "y desaparece de la tabla")
 
+print("\nElegir ciudad")
+pc = juego.Partida()
+igual(pc.ciudad, "Bucaramanga", "arranca en Bucaramanga")
+cuentas = {}
+for c in juego.CIUDADES:
+    pc.configurar(ciudad=c)
+    cuentas[c] = pc.max_rondas()
+print("  ok  lugares por ciudad:", cuentas)
+assert cuentas["Las dos"] == cuentas["Bucaramanga"] + cuentas["Barrancabermeja"], \
+    "las dos tiene que ser la suma de las otras"
+assert cuentas["Barrancabermeja"] >= 10, "faltan lugares de Barrancabermeja"
+
+pc.configurar(ciudad="Barrancabermeja", rondas=5)
+pc.unirse("a", "Ana")
+pc.empezar()
+assert all(u["ciudad"] == "Barrancabermeja" for u in pc.orden), \
+    "no puede colarse un lugar de otra ciudad"
+print("  ok  jugando en Barranca, todas las rondas son de Barranca")
+igual(pc.estado_jugador("a")["ciudad"], "Barrancabermeja",
+      "el celular recibe la ciudad para centrar el mapa")
+
+pb = juego.Partida()
+pb.configurar(ciudad="Barrancabermeja", rondas=3)
+pb.unirse("b", "Beto")
+pb.empezar()
+assert not pb.orden[0].get("pinned"), "el colegio de Bucaramanga no debe abrir aca"
+print("  ok  en Barranca no abre el colegio fijo:", pb.orden[0]["name"])
+
+pb2 = juego.Partida()
+pb2.configurar(ciudad="Bucaramanga", rondas=3)
+pb2.unirse("c", "Caro")
+pb2.empezar()
+assert pb2.orden[0].get("pinned"), "en Bucaramanga si debe abrir el colegio"
+print("  ok  en Bucaramanga si abre:", pb2.orden[0]["name"])
+
+pr = juego.Partida()
+pr.configurar(ciudad="Bucaramanga", rondas=26)
+pr.configurar(ciudad="Barrancabermeja")
+assert pr.rondas_totales <= pr.max_rondas(), "cambiar de ciudad debe recortar las rondas"
+print("  ok  pedir 26 rondas y pasar a Barranca las recorta a", pr.rondas_totales)
+
 print("\nTODAS LAS PRUEBAS PASARON")

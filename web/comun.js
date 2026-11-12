@@ -5,8 +5,31 @@ const BASE = location.origin + "/";
 // Tiene que coincidir con lo que haya en tiles.db
 const SAT_MIN = 16, SAT_MAX = 19;
 const VT_MAX = 15;                 // de ahi para arriba MapLibre reescala
-const CALLES_MIN = 11, CALLES_MAX = 18;
-const METRO = [[-73.230, 7.020], [-73.040, 7.200]];
+const CALLES_MAX = 18;
+
+/* Donde arranca el mapa de marcar, segun la ciudad que eligio el profesor.
+   Bucaramanga y Barrancabermeja estan a 81 km: si se juega con las dos hay que
+   abrir el mapa para que ambas quepan, o el estudiante tendria que arrastrar
+   medio departamento. Los limites deben coincidir con los recuadros bajados en
+   descargar_mapas.py, si no el mapa se sale de los tiles que hay. */
+const VISTAS = {
+  "Bucaramanga": {
+    centro: [-73.123, 7.119], zoom: 12, minZoom: 11,
+    limites: [[-73.230, 7.020], [-73.040, 7.200]],
+  },
+  "Barrancabermeja": {
+    centro: [-73.856, 7.065], zoom: 13, minZoom: 11,
+    limites: [[-73.930, 6.990], [-73.780, 7.110]],
+  },
+  "Las dos": {
+    centro: [-73.490, 7.095], zoom: 9, minZoom: 8,
+    limites: [[-73.990, 6.950], [-73.000, 7.250]],
+  },
+};
+
+function vistaDe(ciudad) {
+  return VISTAS[ciudad] || VISTAS["Bucaramanga"];
+}
 
 function estiloSatelite() {
   return {

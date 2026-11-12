@@ -231,8 +231,15 @@ el satélite que falte.
 
 ## Ubicaciones
 
-Se editan en [`web/locations.js`](web/locations.js). El que tiene `"pinned": true`
-sale **siempre en la primera ronda** — pensado para el colegio que se visita ese día.
+Se editan en [`web/locations.js`](web/locations.js). Cada una lleva su `ciudad`.
+El que tiene `"pinned": true` sale **siempre en la primera ronda**, pensado para el
+colegio que se visita ese día — pero solo si su ciudad está en juego: no tendría
+sentido abrir con un colegio de Bucaramanga una competencia de Barrancabermeja.
+
+Si se agrega una ciudad nueva hay que sumar su recuadro a `BBOXES` en
+[`descargar_mapas.py`](descargar_mapas.py) y su vista a `VISTAS` en
+[`web/comun.js`](web/comun.js). Sin lo primero, el mapa para marcar sale vacío;
+sin lo segundo, arranca centrado en la ciudad equivocada.
 
 Están sincronizadas con las del repo de un jugador. Solo entran lugares que se
 reconocen **desde el aire**: varios parques de Bucaramanga son plazoletas tapadas

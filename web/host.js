@@ -116,7 +116,7 @@ function mapaSolucion(e) {
   mapa = crearMapa("mapa", {
     style: estiloCalles(),
     center: [e.solucion.lon, e.solucion.lat], zoom: 14,
-    minZoom: CALLES_MIN, maxZoom: CALLES_MAX,
+    minZoom: vistaDe(e.ciudad).minZoom, maxZoom: CALLES_MAX,
     attributionControl: { compact: true },
   });
   modoMapa = "calles";
@@ -208,6 +208,8 @@ function render(e, cambio) {
     $("cajaInfo").innerHTML =
       `<div style="font-size:15px;opacity:.7">Era</div>
        <div style="font-size:25px;font-weight:800;color:var(--verde)">${escapar(e.solucion.nombre)}</div>` +
+      (e.ciudad === "Las dos" && e.solucion.ciudad
+        ? `<div style="font-size:15px;opacity:.7">${escapar(e.solucion.ciudad)}</div>` : "") +
       (mejor ? `<div style="margin-top:10px">Más cerca: <b>${escapar(mejor.nombre)}</b>
                  — ${textoDistancia(mejor.km)}</div>` : "") +
       `<div style="margin-top:6px;color:var(--texto2)">${(e.marcas || []).length} de ${e.jugadores} respondieron</div>`;
@@ -234,7 +236,21 @@ function render(e, cambio) {
 let ajustesListos = false;
 
 function prepararAjustes(e) {
-  const sr = $("selRondas"), ss = $("selSegundos");
+  const sr = $("selRondas"), ss = $("selSegundos"), sc = $("selCiudad");
+
+  // La ciudad se elige aqui y no en el celular: esta pantalla vive en una URL
+  // con codigo, asi que es la unica que ve el profesor.
+  if (!sc.options.length && e.ciudades) {
+    sc.innerHTML = e.ciudades.map((c) =>
+      `<option value="${escapar(c)}">${escapar(c)}</option>`).join("");
+    sc.value = e.ciudad;
+    sc.onchange = () => {
+      ajustesListos = false;          // cambian los lugares, se rehacen rondas
+      enviar(api("/api/config"), { ciudad: sc.value });
+    };
+  }
+  if (sc.value !== e.ciudad && !sc.matches(":focus")) sc.value = e.ciudad;
+
   if (!ajustesListos && e.max_rondas) {
     const opciones = [3, 5, 8, 10, 12, 15, 20, e.max_rondas]
       .filter((n, i, a) => n <= e.max_rondas && a.indexOf(n) === i)
@@ -250,8 +266,9 @@ function prepararAjustes(e) {
     ajustesListos = true;
   }
   const mins = Math.round((+$("selRondas").value * (+$("selSegundos").value + 20)) / 60);
+  const donde = e.ciudad === "Las dos" ? "entre las dos ciudades" : `en ${e.ciudad}`;
   $("notaRondas").textContent =
-    `Máximo ${e.max_rondas} rondas: no se repite lugar. ` +
+    `${e.max_rondas} lugares disponibles ${donde}, y no se repite ninguno. ` +
     `Esta partida dura unos ${mins} minutos contando los resultados.`;
 }
 

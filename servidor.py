@@ -177,7 +177,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if ruta == "/api/expulsar":
             return self.responder_json({"nombre": partida.expulsar(datos.get("id", ""))})
         if ruta == "/api/config":
-            ok = partida.configurar(datos.get("rondas"), datos.get("segundos"))
+            ok = partida.configurar(datos.get("rondas"), datos.get("segundos"),
+                                    datos.get("ciudad"))
             return self.responder_json({"ok": ok})
         if ruta == "/api/empezar":
             return self.responder_json({"ok": partida.empezar()})
